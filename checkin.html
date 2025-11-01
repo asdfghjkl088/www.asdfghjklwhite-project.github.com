@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>永久纪念打卡</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        body { background: #f0f8fb; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: #2d3748; margin-bottom: 30px; font-size: 26px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        h1 span { font-size: 32px; }
+        .warning { text-align: center; padding: 25px; background: #fee2e2; border-radius: 12px; margin: 50px 0; color: #dc2626; font-size: 18px; }
+        .warning-btn { margin-top: 20px; padding: 12px 24px; background: #38b2ac; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        .check-success { text-align: center; padding: 25px; background: #f0fdf4; border-radius: 12px; margin-bottom: 30px; border: 1px solid #dcfce7; }
+        .check-success h2 { color: #166534; font-size: 22px; margin-bottom: 12px; }
+        .check-success p { color: #065f46; font-size: 16px; }
+        .total-count { text-align: center; margin: 20px 0 30px; padding: 15px; background: #e8f4f8; border-radius: 10px; }
+        .total-count h3 { color: #2d3748; font-size: 19px; margin-bottom: 8px; }
+        .count-number { color: #38b2ac; font-size: 28px; font-weight: 700; }
+        .comment-area { margin-top: 30px; }
+        .comment-area h3 { color: #2d3748; font-size: 20px; margin-bottom: 18px; }
+        .comment-form { display: flex; gap: 10px; margin-bottom: 25px; }
+        .comment-input { flex: 1; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; resize: none; height: 80px; }
+        .comment-btn { padding: 0 20px; background: #38b2ac; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .comment-btn:hover { background: #319795; }
+        .comment-list { margin-top: 20px; }
+        .comment-item { padding: 18px; background: #f8fafc; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid #38b2ac; }
+        .comment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .comment-name { color: #319795; font-weight: 600; cursor: pointer; }
+        .comment-name:hover { text-decoration: underline; }
+        .comment-emo { font-size: 18px; }
+        .comment-content { color: #2d3748; font-size: 15px; line-height: 1.6; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; display: none; }
+        .modal-content { background: white; padding: 30px; border-radius: 16px; max-width: 450px; width: 90%; }
+        .modal h3 { color: #2d3748; margin-bottom: 20px; }
+        .modal-info { color: #4a5568; font-size: 17px; line-height: 1.8; }
+        .modal-info span { color: #319795; font-weight: 500; }
+        .modal-btn { margin-top: 25px; padding: 12px 24px; background: #38b2ac; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span>📜</span> 永久纪念打卡</h1>
+
+        <!-- 未提交信息提示 -->
+        <div id="warningSection" class="warning">
+            你未提交相关社交平台消息，请尽快提交！
+            <br>
+            <button class="warning-btn" onclick="goToSubmit()">立即提交</button>
+        </div>
+
+        <!-- 打卡成功+互动区域 -->
+        <div id="checkInSection" style="display: none;">
+            <div class="check-success">
+                <h2>✅ 打卡成功！永久纪念已保存</h2>
+                <p>每一位打卡者都会累计入总次数，快来分享你的心情吧～</p>
+            </div>
+
+            <div class="total-count">
+                <h3>累计打卡人数</h3>
+                <div class="count-number" id="totalCheckInCount">0</div>
+            </div>
+
+            <div class="comment-area">
+                <h3>💬 打卡小伙伴留言区</h3>
+                <form class="comment-form" id="commentForm">
+                    <textarea class="comment-input" id="commentContent" placeholder="分享你的心情、纪念意义，或加个黄豆表情包～ 😊" required></textarea>
+                    <button type="submit" class="comment-btn">发送</button>
+                </form>
+
+                <div class="comment-list" id="commentList">
+                    <!-- 留言动态添加 -->
+                </div>
+            </div>
+        </div>
+    </div>
+<p>&copy; 2025 白工程asdfghjkl. All rights reserved.</p>
+    <!-- 账号信息弹窗 -->
+    <div class="modal" id="platformModal">
+        <div class="modal-content">
+            <h3>📱 账号信息</h3>
+            <div class="modal-info">
+                昵称：<span id="modalUsername"></span><br>
+                平台：<span id="modalPlatform"></span><br>
+                账号：<span id="modalPlatformId"></span>
+            </div>
+            <button class="modal-btn" onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('checkInUserInfo')) || null;
+        let userList = JSON.parse(localStorage.getItem('checkInUserList')) || [];
+        let comments = JSON.parse(localStorage.getItem('checkInComments')) || [];
+
+        // 页面加载时验证提交状态
+        window.onload = function() {
+            if (currentUser && currentUser.isSubmitted) {
+                // 已提交，显示打卡互动区
+                document.getElementById('warningSection').style.display = 'none';
+                document.getElementById('checkInSection').style.display = 'block';
+                updateTotalCount();
+                renderComments();
+            } else {
+                // 未提交，显示提示并停留
+                document.getElementById('warningSection').style.display = 'block';
+                document.getElementById('checkInSection').style.display = 'none';
+            }
+        };
+
+        // 跳转至信息提交页
+        function goToSubmit() {
+            window.location.href = 'submit.html';
+        }
+
+        // 留言提交
+        document.getElementById('commentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const content = document.getElementById('commentContent').value.trim();
+            if (!content || !currentUser) return;
+
+            const newComment = {
+                username: currentUser.username,
+                platform: currentUser.platform,
+                platformId: currentUser.platformId,
+                content: content,
+                time: new Date().toLocaleString()
+            };
+
+            comments.unshift(newComment);
+            localStorage.setItem('checkInComments', JSON.stringify(comments));
+            document.getElementById('commentContent').value = '';
+            renderComments();
+        });
+
+        // 更新累计打卡人数
+        function updateTotalCount() {
+            document.getElementById('totalCheckInCount').textContent = userList.length;
+        }
+
+        // 渲染留言
+        function renderComments() {
+            const commentList = document.getElementById('commentList');
+            commentList.innerHTML = '';
+            if (comments.length === 0) {
+                commentList.innerHTML = '<div style="text-align: center; padding: 30px; color: #718096;">还没有留言，快来成为第一个分享的人吧～</div>';
+                return;
+            }
+
+            comments.forEach(comment => {
+                const emojis = ['😀', '😉', '✨', '🎉', '😊', '🌟', '🥰', '👏'];
+                const randomEmo = emojis[Math.floor(Math.random() * emojis.length)];
+
+                const commentItem = document.createElement('div');
+                commentItem.className = 'comment-item';
+                commentItem.innerHTML = `
+                    <div class="comment-header">
+                        <div class="comment-name" onclick="showPlatformInfo('${comment.username}', '${comment.platform}', '${comment.platformId}')">
+                            ${comment.username}
+                        </div>
+                        <div class="comment-emo">${randomEmo}</div>
+                    </div>
+                    <div class="comment-content">${comment.content}</div>
+                    <div style="margin-top: 8px; font-size: 13px; color: #718096;">${comment.time}</div>
+                `;
+                commentList.appendChild(commentItem);
+            });
+        }
+
+        // 显示账号信息
+        function showPlatformInfo(username, platform, platformId) {
+            document.getElementById('modalUsername').textContent = username;
+            document.getElementById('modalPlatform').textContent = platform;
+            document.getElementById('modalPlatformId').textContent = platformId;
+            document.getElementById('platformModal').style.display = 'flex';
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('platformModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

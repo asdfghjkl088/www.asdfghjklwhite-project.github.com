@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提交社交平台信息</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        body { background: #f0f8fb; padding: 20px; }
+        .container { max-width: 600px; margin: 50px auto; background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: #2d3748; margin-bottom: 30px; font-size: 24px; }
+        .form-group { margin-bottom: 22px; }
+        label { display: block; margin-bottom: 10px; color: #4a5568; font-weight: 500; }
+        input, select { width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; }
+        input:focus, select:focus { outline: none; border-color: #38b2ac; box-shadow: 0 0 0 3px rgba(56,178,172,0.15); }
+        .btn { width: 100%; padding: 16px; background: #38b2ac; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: 600; cursor: pointer; transition: background 0.3s; }
+        .btn:hover { background: #319795; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 提交社交平台信息</h1>
+        <form id="infoForm">
+            <div class="form-group">
+                <label for="username">用户名称（必填）</label>
+                <input type="text" id="username" required placeholder="请输入你的专属昵称">
+            </div>
+            <div class="form-group">
+                <label for="platform">所属平台（必填）</label>
+                <select id="platform" required>
+                    <option value="">请选择平台</option>
+                    <option value="kuaishou">快手</option>
+                    <option value="douyin">抖音</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="platformId">平台账号（必填）</label>
+                <input type="text" id="platformId" required placeholder="请输入快手号/抖音号或名称">
+            </div>
+            <button type="submit" class="btn">提交信息 · 进入打卡</button>
+        </form>
+    </div>
+
+    <script>
+        // 表单提交后保存信息，跳转至打卡留言页
+        document.getElementById('infoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const platform = document.getElementById('platform').value;
+            const platformId = document.getElementById('platformId').value;
+            const platformName = platform === 'kuaishou' ? '快手' : '抖音';
+
+            // 保存用户信息到本地存储（标记为已提交）
+            const userInfo = { username, platform: platformName, platformId, isSubmitted: true };
+            localStorage.setItem('checkInUserInfo', JSON.stringify(userInfo));
+
+            // 保存到用户列表（用于统计打卡人数）
+            let userList = JSON.parse(localStorage.getItem('checkInUserList')) || [];
+            userList.push(userInfo);
+            localStorage.setItem('checkInUserList', JSON.stringify(userList));
+
+            // 跳转至打卡留言页
+            window.location.href = 'checkin.html';
+        });
+    </script>
+</body>
+</html>
